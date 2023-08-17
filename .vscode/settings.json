@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "*.blade.php": "html",
+        "*.json5": "jsonc",
+        "sdl.h": "c"
+    }
+}
