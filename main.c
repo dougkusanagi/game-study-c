@@ -1,16 +1,31 @@
 #include <stdio.h>
-#include "SDL2/SDL.h"
-#include "SDL2/SDL_image.h"
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
+#include "constants.h"
+
+SDL_Window *window;
+SDL_Renderer *renderer;
 
 typedef struct
 {
-    int x, y;
-    SDL_Texture *texture;
+    int x, y, w, h;
+} Ledge;
+
+typedef struct
+{
+    int x, y, w, h;
+    SDL_Texture *animation_idle[13];
 } Entity;
 
 typedef struct
 {
     Entity player;
+
+    Ledge ledges[100];
+
+    SDL_Texture *floor;
+
     SDL_Renderer *renderer;
 } GameState;
 
@@ -72,49 +87,89 @@ void render(GameState *game)
     SDL_SetRenderDrawColor(game->renderer, 255, 255, 255, 255);
     SDL_RenderClear(game->renderer);
 
-    SDL_Rect rect = {game->player.x, game->player.y, 63, 73};
-    SDL_RenderCopy(game->renderer, game->player.texture, NULL, &rect);
+    SDL_Rect rect = {game->player.x, game->player.y, game->player.w, game->player.h};
 
+    // for (int i = 0; i < 13; i++)
+    // {
+    //     SDL_RenderCopyEx(game->renderer, game->player.animation_idle[i], NULL, &rect, 0, NULL, SDL_FLIP_NONE);
+    //     SDL_RenderPresent(game->renderer);
+    // }
+
+    SDL_RenderCopyEx(game->renderer, game->player.animation_idle[0], NULL, &rect, 0, NULL, SDL_FLIP_NONE);
     SDL_RenderPresent(game->renderer);
+}
+
+void loadPlayerAnimations(GameState *game)
+{
+    SDL_Surface *surface;
+    char filename[30];
+
+    for (int i = 0; i < 13; i++)
+    {
+        sprintf(filename, "img/penitent/idle/idle%d.png", i + 1);
+        surface = IMG_Load(filename);
+
+        if (!surface)
+        {
+            printf("Failed to load image: %s\n", SDL_GetError());
+            SDL_Quit();
+            exit(EXIT_FAILURE);
+        }
+
+        game->player.animation_idle[i] = SDL_CreateTextureFromSurface(game->renderer, surface);
+        SDL_FreeSurface(surface);
+    }
 }
 
 void loadGame(GameState *game)
 {
-    SDL_Surface *surface;
-    surface = IMG_Load("img/penitent.png");
-
-    if (!surface)
-    {
-        printf("Failed to load image: %s\n", SDL_GetError());
-        SDL_Quit();
-        exit(EXIT_FAILURE);
-    }
-
-    game->player.texture = SDL_CreateTextureFromSurface(game->renderer, surface);
-    SDL_FreeSurface(surface);
+    loadPlayerAnimations(game);
 
     game->player.x = 100;
     game->player.y = 100;
+    game->player.w = 63;
+    game->player.h = 73;
 }
 
-int main(int argc, char *argv[])
+int initializeWindow(void)
 {
-    GameState game;
-    SDL_Window *window;
-    SDL_Renderer *renderer;
-
-    SDL_Init(SDL_INIT_EVERYTHING);
+    if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+    {
+        printf("Failed to initialize SDL: %s\n", SDL_GetError());
+        return FALSE;
+    }
 
     window = SDL_CreateWindow(
-        "Hello World",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        640, 480,
-        SDL_WINDOW_SHOWN);
+        NULL,
+        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+        WINDOW_WIDTH, WINDOW_HEIGHT,
+        SDL_WINDOW_BORDERLESS);
+
+    if (!window)
+    {
+        printf("Failed to create window: %s\n", SDL_GetError());
+        return FALSE;
+    }
 
     renderer = SDL_CreateRenderer(
         window,
         -1,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+    if (!renderer)
+    {
+        printf("Failed to create renderer: %s\n", SDL_GetError());
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+int main(int argc, char *argv[])
+{
+    initializeWindow();
+
+    GameState game;
     game.renderer = renderer;
 
     loadGame(&game);
@@ -128,7 +183,6 @@ int main(int argc, char *argv[])
         render(&game);
     }
 
-    SDL_DestroyTexture(game.player.texture);
     SDL_DestroyRenderer(renderer);
     SDL_Quit();
 

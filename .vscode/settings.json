@@ -1,7 +1,8 @@
 {
-    "files.associations": {
-        "*.blade.php": "html",
-        "*.json5": "jsonc",
-        "sdl.h": "c"
-    }
+  "files.associations": {
+    "*.blade.php": "html",
+    "*.json5": "jsonc",
+    "sdl.h": "c",
+    "stdio.h": "c"
+  }
 }
